@@ -8,7 +8,7 @@ trait Command
 case class Arrow(w: Signal, r: Signal) extends Command
 case class Assign(s: Signal) extends Command
 
-trait RegisterTransferParsers extends JavaTokenParsers {
+trait RegisterTransferParsers extends MimaParsers {
   final class ParseHandler(in: String) {
     def parseAs[A, B](p: Parser[A])(f: A => B): B =
       parseAll(p, in) match {
@@ -18,8 +18,6 @@ trait RegisterTransferParsers extends JavaTokenParsers {
   }
   
   implicit def ParseHandler(in: String): ParseHandler = new ParseHandler(in)
-  
-  override val whiteSpace = """[ \t\x0B\f\r]+""".r
   
   val comment = "//.*".r
   
@@ -40,9 +38,6 @@ trait RegisterTransferParsers extends JavaTokenParsers {
       case wReg ~ (rReg: String) =>
         Arrow(signal(wReg, writeSignals), signal(rReg, readSignals))
     }
-  
-  lazy val const: Parser[Int] =
-    wholeNumber ^^ (_.toInt)
     
   protected def handleCommand: Command => List[Signal] = {
     case Arrow(w, r) => List(w, r)
