@@ -7,7 +7,7 @@ import de.ant.mima.parsers.MnemonicParsers
 object Mima extends RegisterTransferParsers with MnemonicParsers {
 
   import java.lang.Integer._
-    
+  
   def dataset(hex: Int) =
     ("%28s" format toBinaryString(parseInt(hex.toString, 16))) replaceAll (" ", "0")
 
@@ -33,7 +33,7 @@ object Mima extends RegisterTransferParsers with MnemonicParsers {
   }
     
   def interpret(str: String) {
-    (str parseAs lines) {
+    (str parseWith lines) {
       case xs =>
         val x = xs map (_ flatMap handleCommand) map (hex(_: _*))
         x foreach println
@@ -41,7 +41,7 @@ object Mima extends RegisterTransferParsers with MnemonicParsers {
   }
   
   def mn(str: String) {
-    (str parseAs asmLine) {
+    (str parseWith asmLine) {
       case m => println(m)
     }
   }
@@ -68,5 +68,7 @@ case object R extends Signal(11)
 case object W extends Signal(10)
 case object Res1 extends Signal(9)
 case object Res0 extends Signal(8)
+case object B extends Signal(9)
+case object D extends Signal(8)
 case class Adr(adr: Int) extends Signal(0)
 case class Op(op: Int) extends Signal(12)

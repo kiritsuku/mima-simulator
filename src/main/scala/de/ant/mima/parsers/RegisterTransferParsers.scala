@@ -10,17 +10,17 @@ case class Assign(s: Signal) extends Command
 
 trait RegisterTransferParsers extends MimaParsers {
   
-  val comment = "//.*".r
-  
   lazy val lines: Parser[List[List[Command]]] =
-    repsep(commands <~ opt(comment), "\n")
+    repsep(commands, "\n") ^^ { _ filter (_.nonEmpty) }
   
   lazy val commands: Parser[List[Command]] =
-    repsep(command, "," | ";")
+    repsep(command, ";") <~ opt(comment)
   
   lazy val command: Parser[Command] =
     (ident <~ ("->" | "=")) ~ (ident | const) ^? {
       case "ALU" ~ (n: Int) =>
+        if (n > 7)
+          throw new IAE("ALU operation '%s' is unknown" format n)
         Assign(Op(n))
       case "ALU" ~ (s: String) =>
         Assign(Op(aluOp(s)))
@@ -42,7 +42,7 @@ trait RegisterTransferParsers extends MimaParsers {
     "Akku" -> Ar, "X" -> X, "Y" -> Y, "IAR" -> Pr, "IR" -> Ir, "SDR" -> Dr, "SAR" -> S
   )
   private val assignSignals = Map[String, Signal](
-    "R" -> R, "W" -> W
+    "R" -> R, "W" -> W, "D" -> D, "B" -> B
   )
   private val aluOps = Map[String, Int](
     "nop" -> 0, "add" -> 1, "rot" -> 2, "and" -> 3, "or" -> 4, "xor" -> 5, "cpl" -> 7, "cmp" -> 8
