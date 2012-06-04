@@ -11,7 +11,7 @@ class MnemonicParsersTest extends SpecificationWithJUnit {
   classOf[MnemonicParsers].getSimpleName should {
     "parse" in {
       "a mnemonic" in new Test {
-        val input1 = "ADD 0x123"
+        val input1 = "ADD $123"
         val input2 = "JMP LOOP"
         
         (input1 parseAs mnemonic) === ADD(Adr(0x123))
@@ -22,27 +22,36 @@ class MnemonicParsersTest extends SpecificationWithJUnit {
         (input parseAs comment) === input
       }
       "a complete line" in new Test {
-        val input = "START: LDV 0x100 ; this is a comment"
+        val input = "START: LDV $100 ; this is a comment"
         
         (input parseAs asmLine) === List(Label("START"), LDV(Adr(0x100)))
       }
       "multiple lines" in new Test {
-        val input = """|START: LDV 0x100 ; this is a comment
+        val input = """
+          |* = $10
+          |E_CONST: DS $100
+          |START: LDV $100 ; this is a comment
           |ADD CONST ; STV CONST
           |
           |; empty line
           |EXIT: ADD MS""".stripMargin
         
         (input parseAs asmLines) === List(
+          List(LoadPoint(0x10)),
           List(Label("START"), LDV(Adr(0x100))),
           List(ADD(Label("CONST"))),
           List(Label("EXIT"), ADD(Label("MS")))
         )
       }
+      "a load point" in new Test {
+        val input = "* = $10"
+       
+        (input parseAs loadPoint) === LoadPoint(0x10)
+      }
     }
     "throw an error" in {
       "in mnemonic" in new Test {
-        val input1 = "add 0x123"
+        val input1 = "add $123"
         val input2 = "ADD"
           
         for (i <- List(input1, input2))

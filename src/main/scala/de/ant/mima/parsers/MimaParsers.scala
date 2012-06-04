@@ -27,11 +27,11 @@ trait MimaParsers extends JavaTokenParsers {
   override val whiteSpace = """[ \t\x0B\f\r]+""".r
 
   lazy val const: Parser[Int] = (
-      hexNumber ^^ (n => parseInt(n substring 2, 16))
+      hexNumber ^^ (n => parseInt(n substring 1, 16))
     | wholeNumber ^^ (_.toInt)
   )
   
-  lazy val hexNumber = """-?0x[\da-fA-F]+""".r
+  lazy val hexNumber = """-?\$[\da-fA-F]+""".r
   
   val comment = "//.*".r
 }

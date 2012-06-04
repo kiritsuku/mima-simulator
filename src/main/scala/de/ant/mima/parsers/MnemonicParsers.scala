@@ -11,14 +11,32 @@ trait MnemonicParsers extends MimaParsers {
   lazy val asmLines: Parser[List[List[Asm]]] =
     repsep(asmLine, "\n") ^^ { _ filter (_.nonEmpty) }
     
-  lazy val asmLine: Parser[List[Asm]] =
-    opt(label | (mnemonic ^^ (List(_)))) <~ opt(comment) ^^ { _.flatten.toList }
+  lazy val asmLine: Parser[List[Asm]] = (
+      loadPoint ^^ (List(_))
+    | opt(label | (mnemonic ^^ (List(_)))) <~ opt(comment) ^^ { _.flatten.toList }
+  )
   
-  lazy val label: Parser[List[Asm]] =
-    (ident <~ ":") ~ opt(mnemonic) ^^ {
+  lazy val label: Parser[List[Asm]] = (
+    (ident <~ ":") ~ (macro^^(Some(_)) | storage^^(Some(_)) | opt(mnemonic)) ^^ {
+      case i ~ (a @ Some(_: Macro)) => List(Label(i, a))
+      case i ~ (a @ Some(_: Storage)) => List(Label(i, a))
       case i ~ None => List(Label(i))
-      case i ~ Some(mn) => List(Label(i), mn)
+      case i ~ Some(a) => List(Label(i), a)
+//      case i ~ (m :Macro) => List(Label(i, Some(m)))
+//      case i ~ (s: Storage) => List(Label(i, Some(s)))
+//      case i ~ None => List(Label(i))
+//      case i ~ (m @ Some(x: Asm)) => List(Label(i), m)
     }
+  )
+  
+  lazy val macro: Parser[Macro] =
+    "=" ~> const ^^ Macro
+  
+  lazy val storage: Parser[Storage] =
+    repsep("DS" ~> const, "\n") ^^ Storage
+  
+  lazy val loadPoint: Parser[LoadPoint] =
+    "*" ~ "=" ~> const ^^ LoadPoint
 
   lazy val mnemonic: Parser[Asm] =
     ident ~ opt(const | ident) ^? {
@@ -42,8 +60,11 @@ trait MnemonicParsers extends MimaParsers {
 }
 
 trait Asm
-case class Label(s: String) extends Asm
+case class Label(s: String, to: Option[Asm] = None) extends Asm
 case class Adr(i: Int) extends Asm
+case class LoadPoint(i: Int) extends Asm
+case class Storage(i: List[Int]) extends Asm
+case class Macro(i: Int) extends Asm
 
 abstract class Mnemonic(val op: Int) extends Asm {
   
@@ -53,7 +74,7 @@ abstract class Mnemonic(val op: Int) extends Asm {
     ALU = add; R = 1
     Z -> IAR
     SDR -> IR
-    //D = 1
+    D = 1
   """
   
   def eval: String
@@ -133,27 +154,8 @@ case class JMP(a: Asm) extends Mnemonic(8) {
 case class JMN(a: Asm) extends Mnemonic(9) {
   // TODO save 0x800000 and 0 to memory
   def eval = """
-    IR -> X // X = 0x800000 (2^23)
-    Akku -> Y // Y = value to check if negative
-    ALU = and // Z = 0 if value is positive =: res
-    // STV res
-    // another fetch phase to load 0x800000 to IR
-    IR -> X // X = 0x800000
-    // LDV res
-    IR -> Y // Y = previous computed Z
-    ALU = cmp // Z = -1 if value is negative, 0 otherwise
-    Z -> X
-    E -> Y
-    ALU = add // Z = 0 if value is negative, 1 otherwise
-    Z -> X
-    IAR -> Y
-    ALU = add
-    ---------------------------------------------
-    Z -> IAR; Z -> X; R = 1 // IAR increased by 1 if  value is positive
-    E -> Y; R = 1
-    ALU = add; R = 1
-    Z -> IAR
-    SDR -> IR
+    B = 1
+    IR -> IAR
   """
 }
 case object HALT extends Mnemonic(0xF0) {
