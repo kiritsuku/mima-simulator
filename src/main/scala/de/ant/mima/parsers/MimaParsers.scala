@@ -18,7 +18,10 @@ trait MimaParsers extends JavaTokenParsers {
       }
     
     private def error(msg: String, input: Input) = {
-      sys.error("%s (line: %d, pos: %d)" format (msg, input.pos.line, input.pos.column))
+      val pos = input.pos.column-1
+      val offset = 8
+      val xs = Seq(msg, "\n", " "*offset, input.source, "\n", " "*(pos+offset), "^")
+      sys.error(xs.mkString)
     }
   }
   

@@ -17,23 +17,22 @@ trait MnemonicParsers extends MimaParsers {
   )
   
   lazy val label: Parser[List[Asm]] = (
-    (ident <~ ":") ~ (macro^^(Some(_)) | storage^^(Some(_)) | opt(mnemonic)) ^^ {
+    (ident <~ ":") ~ (macro | storage | opt(mnemonic)) ^^ {
       case i ~ (a @ Some(_: Macro)) => List(Label(i, a))
       case i ~ (a @ Some(_: Storage)) => List(Label(i, a))
       case i ~ None => List(Label(i))
       case i ~ Some(a) => List(Label(i), a)
-//      case i ~ (m :Macro) => List(Label(i, Some(m)))
-//      case i ~ (s: Storage) => List(Label(i, Some(s)))
-//      case i ~ None => List(Label(i))
-//      case i ~ (m @ Some(x: Asm)) => List(Label(i), m)
     }
   )
   
-  lazy val macro: Parser[Macro] =
-    "=" ~> const ^^ Macro
+  lazy val next: Parser[Option[Asm]] =
+    macro | storage | opt(mnemonic)
   
-  lazy val storage: Parser[Storage] =
-    repsep("DS" ~> const, "\n") ^^ Storage
+  lazy val macro: Parser[Option[Macro]] =
+    "=" ~> const ^^ {c => Some(Macro(c))}
+  
+  lazy val storage: Parser[Option[Storage]] =
+    rep1sep("DS" ~> const, "\n") ^^ {c => Some(Storage(c))}
   
   lazy val loadPoint: Parser[LoadPoint] =
     "*" ~ "=" ~> const ^^ LoadPoint

@@ -14,39 +14,47 @@ class MnemonicParsersTest extends SpecificationWithJUnit {
         val input1 = "ADD $123"
         val input2 = "JMP LOOP"
         
-        (input1 parseAs mnemonic) === ADD(Adr(0x123))
-        (input2 parseAs mnemonic) === JMP(Label("LOOP"))
+        ADD(Adr(0x123)) === (input1 parseAs mnemonic)
+        JMP(Label("LOOP")) === (input2 parseAs mnemonic)
       }
       "a comment" in new Test {
         val input = "; this is a comment"
-        (input parseAs comment) === input
+        input === (input parseAs comment)
       }
+      /*"a macro" in new Test {
+        val input = "THIS = $300"
+        
+        (input parseAs macro) === List(Label("THIS"), Macro(0x300))
+      }*/
       "a complete line" in new Test {
         val input = "START: LDV $100 ; this is a comment"
         
-        (input parseAs asmLine) === List(Label("START"), LDV(Adr(0x100)))
+        List(Label("START"), LDV(Adr(0x100))) === (input parseAs asmLine)
       }
       "multiple lines" in new Test {
         val input = """
-          |* = $10
-          |E_CONST: DS $100
-          |START: LDV $100 ; this is a comment
-          |ADD CONST ; STV CONST
-          |
-          |; empty line
-          |EXIT: ADD MS""".stripMargin
+          * = $10
+          E_CONST: DS $100
+                   DS $200
+                   DS $300
+          START: LDV $100 ; this is a comment
+          ADD CONST ; STV CONST
+
+          ; empty line
+          EXIT: ADD MS"""
         
-        (input parseAs asmLines) === List(
+        List(
           List(LoadPoint(0x10)),
+          List(Label("E_CONST", Some(Storage(List(0x100, 0x200, 0x300))))),
           List(Label("START"), LDV(Adr(0x100))),
           List(ADD(Label("CONST"))),
           List(Label("EXIT"), ADD(Label("MS")))
-        )
+        ) === (input parseAs asmLines)
       }
       "a load point" in new Test {
         val input = "* = $10"
        
-        (input parseAs loadPoint) === LoadPoint(0x10)
+         LoadPoint(0x10) === (input parseAs loadPoint)
       }
     }
     "throw an error" in {

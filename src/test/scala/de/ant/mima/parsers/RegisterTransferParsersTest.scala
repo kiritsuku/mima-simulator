@@ -17,45 +17,44 @@ class RegisterTransferParsersTest extends SpecificationWithJUnit {
         val input3 = "ALU = add"
         val input4 = "ALU = 5"
           
-        (input1 parseAs command) === Arrow(Pw, S)
-        (input2 parseAs command) === Assign(R)
-        (input3 parseAs command) === Assign(Op(1))
-        (input4 parseAs command) === Assign(Op(5))
-        (input4 parseAs command) === Assign(Op(5))
+        Arrow(Pw, S) === (input1 parseAs command)
+        Assign(R) === (input2 parseAs command)
+        Assign(Op(1)) === (input3 parseAs command)
+        Assign(Op(5)) === (input4 parseAs command)
+        Assign(Op(5)) === (input4 parseAs command)
       }
       "a comment" in new Test {
         val input = "// this is a comment"
           
-        (input parseAs comment) === input
+        input === (input parseAs comment)
       }
       "a command and a comment in same line" in new Test {
         val input = "IAR -> SAR // this is a comment"
         
-        (input parseAs commands) === List(Arrow(Pw, S))
+        List(Arrow(Pw, S)) === (input parseAs commands)
       }
       "multiple commands" in new Test {
         val input = "IAR -> SAR; IAR -> X; R = 1"
         
-        (input parseAs commands) === List(
-          Arrow(Pw, S), Arrow(Pw, X), Assign(R)
-        )
+        List(Arrow(Pw, S), Arrow(Pw, X), Assign(R)) === (input parseAs commands)
       }
       "multiple lines" in new Test {
         val input = """
-          |IAR -> SAR; R = 1
-          |// comment
-          |
-          |ALU = add
-          |SDR -> IR
-          |D = 1
-        """.stripMargin
+          IAR -> SAR; R = 1
+          // comment
+          
+          ALU = add
+          SDR -> IR
+          D = 1
+        """
         
-        (input parseAs lines) === List(
+        val expected = List(
           List(Arrow(Pw, S), Assign(R)),
           List(Assign(Op(1))),
           List(Arrow(Dw, Ir)),
           List(Assign(D))
         )
+        expected === (input parseAs lines)
       }
     }
     "throw an error" in {
