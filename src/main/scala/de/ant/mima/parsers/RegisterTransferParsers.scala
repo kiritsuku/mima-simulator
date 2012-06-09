@@ -9,15 +9,6 @@ case class Arrow(w: Signal, r: Signal) extends Command
 case class Assign(s: Signal) extends Command
 
 trait RegisterTransferParsers extends MimaParsers {
-  final class ParseHandler(in: String) {
-    def parseAs[A, B](p: Parser[A])(f: A => B): B =
-      parseAll(p, in) match {
-        case NoSuccess(msg, _) => sys.error(msg)
-        case Success(a, _) => f(a)
-      }
-  }
-  
-  implicit def ParseHandler(in: String): ParseHandler = new ParseHandler(in)
   
   val comment = "//.*".r
   

@@ -2,8 +2,9 @@ package de.ant.mima
 
 import de.ant.mima.parsers.RegisterTransferParsers
 import scala.{IllegalArgumentException => IAE}
+import de.ant.mima.parsers.MnemonicParsers
 
-object Mima extends RegisterTransferParsers {
+object Mima extends RegisterTransferParsers with MnemonicParsers {
 
   import java.lang.Integer._
     
@@ -36,6 +37,12 @@ object Mima extends RegisterTransferParsers {
       case xs =>
         val x = xs map (_ flatMap handleCommand) map (hex(_: _*))
         x foreach println
+    }
+  }
+  
+  def mn(str: String) {
+    (str parseAs asmLine) {
+      case m => println(m)
     }
   }
 }
